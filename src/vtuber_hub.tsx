@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { CalendarDays, BarChart3, Sparkles, Search, Users, Eye, Radio, CircleDollarSign, Plus, ExternalLink, Youtube } from 'lucide-react';
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { generateGeminiText } from './lib/gemini';
 
 const analytics = [
   { name: '10/01', subs: 51200 }, { name: '10/08', subs: 51800 },
@@ -28,12 +29,33 @@ export default function VtuberHub() {
   const [date, setDate] = useState('');
   const [prompt, setPrompt] = useState('');
   const [answer, setAnswer] = useState('');
+  const [isGenerating, setIsGenerating] = useState(false);
 
   function addEvent(e: FormEvent) {
     e.preventDefault();
     if (!title.trim() || !date) return;
     setEvents([...events, { title: title.trim(), date, time: '21:00 - 23:00', category: '配信', status: '予定' }]);
     setTitle('');
+  }
+
+  async function onGenerateAI() {
+    if (!prompt.trim()) {
+      setAnswer('先に内容を入力してください。');
+      return;
+    }
+
+    setIsGenerating(true);
+    setAnswer('Geminiが文章を作成しています…');
+    try {
+      const text = await generateGeminiText(
+        `あなたはVTuberの運営アシスタントです。以下のテーマについて、親しみやすく魅力的な文章を日本語で作成してください。\n\nテーマ: ${prompt.trim()}`,
+      );
+      setAnswer(text);
+    } catch (error) {
+      setAnswer(error instanceof Error ? error.message : 'AI生成に失敗しました。');
+    } finally {
+      setIsGenerating(false);
+    }
   }
 
   return (
@@ -66,7 +88,7 @@ export default function VtuberHub() {
           <div className="space-y-3 lg:col-span-2"><h2 className="font-serif font-semibold">配信スケジュール</h2>{events.map((event, i) => <article key={`${event.date}-${i}`} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#3b322c] bg-[#1c1815] p-4"><div><h3 className="text-sm font-bold">{event.title}</h3><p className="mt-2 text-xs text-[#a39585]">📅 {event.date}　⏰ {event.time}　・{event.category}</p></div><span className="rounded-full border border-[#4d4023] bg-[#2b2518] px-3 py-1 text-xs text-[#d4a859]">{event.status}</span></article>)}</div>
         </section>}
 
-        {tab === 'ai' && <section className="grid gap-5 lg:grid-cols-3"><div className="space-y-3 rounded-2xl border border-[#3b322c] bg-[#1c1815] p-5"><h2 className="flex items-center gap-2 font-serif font-bold"><Sparkles size={18} className="text-[#d4b584]"/>AIアシスタント</h2><p className="text-xs leading-5 text-[#a39585]">企画や告知文の下書きを入力できます。現在は画面サンプルで、Gemini APIには接続されていません。</p><textarea value={prompt} onChange={e => setPrompt(e.target.value)} rows={5} className="w-full rounded-xl border border-[#3b322c] bg-[#120f0d] p-3 text-sm" placeholder="例：今夜のASMR配信の告知文を考えて"/><button onClick={() => setAnswer(prompt.trim() ? `【下書き】\n\n${prompt}\n\n※これは表示確認用のサンプルです。Geminiによる生成ではありません。` : '先に内容を入力してください。')} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#8c6d46] p-3 text-sm font-bold text-[#14110f]"><Sparkles size={16}/>下書きを表示</button></div><div className="rounded-2xl border border-[#3b322c] bg-[#1c1815] p-5 lg:col-span-2"><h2 className="font-serif font-bold">下書き</h2><p className="mt-4 whitespace-pre-wrap text-sm leading-7 text-[#d8cfc4]">{answer || '入力した内容の下書きがここに表示されます。'}</p></div></section>}
+        {tab === 'ai' && <section className="grid gap-5 lg:grid-cols-3"><div className="space-y-3 rounded-2xl border border-[#3b322c] bg-[#1c1815] p-5"><h2 className="flex items-center gap-2 font-serif font-bold"><Sparkles size={18} className="text-[#d4b584]"/>AIアシスタント</h2><p className="text-xs leading-5 text-[#a39585]">企画や告知文の下書きをGeminiで生成します。</p><textarea value={prompt} onChange={e => setPrompt(e.target.value)} rows={5} className="w-full rounded-xl border border-[#3b322c] bg-[#120f0d] p-3 text-sm" placeholder="例：今夜のASMR配信の告知文を考えて"/><button onClick={onGenerateAI} disabled={isGenerating} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#8c6d46] p-3 text-sm font-bold text-[#14110f] disabled:opacity-60"><Sparkles size={16}/>{isGenerating ? '生成中...' : '下書きを生成'}</button></div><div className="rounded-2xl border border-[#3b322c] bg-[#1c1815] p-5 lg:col-span-2"><h2 className="font-serif font-bold">下書き</h2><p className="mt-4 whitespace-pre-wrap text-sm leading-7 text-[#d8cfc4]">{answer || '入力した内容の下書きがここに表示されます。'}</p></div></section>}
 
         {tab === 'community' && <section className="grid gap-4 md:grid-cols-2"><div className="rounded-2xl border border-[#3b322c] bg-[#1c1815] p-5"><h2 className="flex items-center gap-2 font-serif font-bold"><Search size={17}/>エゴサ・コミュニティ</h2><p className="mt-3 text-sm text-[#a39585]">監視キーワード: #曇ひより、#曇ひより見ろ、#くもりあ</p><div className="mt-4 rounded-xl bg-[#120f0d] p-4 text-sm">ファン投稿や質問をここにまとめるためのスペースです。外部SNSとの自動連携は未設定です。</div></div><div className="rounded-2xl border border-[#3b322c] bg-[#1c1815] p-5"><h2 className="flex items-center gap-2 font-serif font-bold"><Youtube size={17}/>外部サービス</h2><p className="mt-3 text-sm text-[#a39585]">YouTube、Discord、マシュマロなどのリンクを追加できます。</p><a href="https://marshmallow-qa.com/" target="_blank" rel="noreferrer" className="mt-4 inline-flex items-center gap-2 rounded-lg border border-[#3b322c] px-3 py-2 text-sm text-[#d4b584] hover:bg-[#2b2420]">マシュマロを開く <ExternalLink size={14}/></a></div></section>}
         <p className="text-center text-xs text-[#807265]">このページの数値・投稿は表示確認用のサンプルです。実際のYouTube/SNSデータとは連携していません。</p>
