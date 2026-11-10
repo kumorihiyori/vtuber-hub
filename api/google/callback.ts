@@ -16,6 +16,7 @@ type ApiResponse = {
 const COOKIE_PATH = '/api/google';
 const STATE_COOKIE = 'google_oauth_state';
 const VERIFIER_COOKIE = 'google_oauth_code_verifier';
+const ALLOWED_EMAIL_ENV = 'GOOGLE_ALLOWED_EMAIL';
 
 function getQueryValue(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] ?? '' : value ?? '';
@@ -26,7 +27,10 @@ function getCookie(req: ApiRequest, name: string) {
   if (!cookieHeader) return '';
 
   const prefix = `${name}=`;
-  const cookie = cookieHeader.split(';').map((part) => part.trim()).find((part) => part.startsWith(prefix));
+  const cookie = cookieHeader
+    .split(';')
+    .map((part) => part.trim())
+    .find((part) => part.startsWith(prefix));
   return cookie ? cookie.slice(prefix.length) : '';
 }
 
@@ -89,9 +93,14 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
   const redirectUri = process.env.GOOGLE_REDIRECT_URI;
   const databaseUrl = process.env.DATABASE_URL;
+  const allowedEmail = process.env[ALLOWED_EMAIL_ENV]?.trim().toLowerCase();
 
   if (!code || !clientId || !clientSecret || !redirectUri || !databaseUrl) {
     return res.status(400).json({ error: 'Required OAuth or database configuration is missing.' });
+  }
+
+  if (!allowedEmail) {
+    return res.status(500).json({ error: 'Owner email is not configured.' });
   }
 
   try {
@@ -142,6 +151,11 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
       return res.status(400).json({ error: 'A verified Google email address is required.' });
     }
 
+    const email = String(userInfo.email).trim().toLowerCase();
+    if (email !== allowedEmail) {
+      return res.status(403).json({ error: 'This Google account is not allowed to use this app.' });
+    }
+
     const encryptedRefreshToken = encryptText(tokenData.refresh_token);
     const client = new Client({ connectionString: databaseUrl });
 
@@ -154,7 +168,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
         ON CONFLICT (account_id)
         DO UPDATE SET refresh_token_ciphertext = EXCLUDED.refresh_token_ciphertext, updated_at = NOW()
         `,
-        [userInfo.email, encryptedRefreshToken],
+        [email, encryptedRefreshToken],
       );
     } finally {
       await client.end().catch(() => undefined);
@@ -162,7 +176,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
 
     return res.status(200).json({
       ok: true,
-      email: userInfo.email,
+      email,
       message: 'Google OAuth connected successfully.',
     });
   } catch (error) {
