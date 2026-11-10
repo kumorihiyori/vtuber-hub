@@ -1,6 +1,6 @@
 import crypto from 'node:crypto';
 import { Client } from 'pg';
-import { createOwnerSession, ownerSessionCookie } from '../_lib/owner-session';
+import { createOwnerSession, ownerSessionCookie } from '../_lib/owner-session.js';
 
 type ApiRequest = {
   method?: string;

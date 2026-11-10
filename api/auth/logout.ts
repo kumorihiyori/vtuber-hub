@@ -1,4 +1,4 @@
-import { clearOwnerSessionCookie } from '../_lib/owner-session';
+import { clearOwnerSessionCookie } from '../_lib/owner-session.js';
 
 type ApiRequest = {
   method?: string;
