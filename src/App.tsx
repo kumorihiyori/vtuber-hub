@@ -1,1 +1,1 @@
-export { default } from './vtuber_hub';
+export { default } from './owner_dashboard';
