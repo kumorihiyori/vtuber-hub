@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { CalendarDays, ChartNoAxesCombined, Sparkles, Search, Users, Eye, Radio, CircleDollarSign, Plus, ExternalLink, Youtube } from 'lucide-react';
+import { useState, type FormEvent } from 'react';
+import { CalendarDays, BarChart3, Sparkles, Search, Users, Eye, Radio, CircleDollarSign, Plus, ExternalLink, Youtube } from 'lucide-react';
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
 const analytics = [
@@ -13,7 +13,7 @@ const initialEvents = [
   { title: '【ASMR】耳かき＆ささやき声でぐっすり睡眠導入', date: '2026-11-13', time: '23:00 - 01:00', category: 'ASMR', status: '予定' },
 ];
 const tabs = [
-  { id: 'analytics', label: 'アナリティクス', icon: ChartNoAxesCombined },
+  { id: 'analytics', label: 'アナリティクス', icon: BarChart3 },
   { id: 'schedule', label: 'スケジュール', icon: CalendarDays },
   { id: 'ai', label: 'AIアシスタント', icon: Sparkles },
   { id: 'community', label: 'コミュニティ', icon: Users },
@@ -29,7 +29,7 @@ export default function VtuberHub() {
   const [prompt, setPrompt] = useState('');
   const [answer, setAnswer] = useState('');
 
-  function addEvent(e: React.FormEvent) {
+  function addEvent(e: FormEvent) {
     e.preventDefault();
     if (!title.trim() || !date) return;
     setEvents([...events, { title: title.trim(), date, time: '21:00 - 23:00', category: '配信', status: '予定' }]);
