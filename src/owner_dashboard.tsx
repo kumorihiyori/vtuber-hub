@@ -26,6 +26,21 @@ export default function OwnerDashboard() {
 
   useEffect(() => {
     let cancelled = false;
+
+    async function loadOverview() {
+      setLoading(true);
+      try {
+        const response = await fetch('/api/youtube/overview', { cache: 'no-store' });
+        const data = await response.json() as Overview & { error?: string };
+        if (!response.ok) throw new Error(data.error || 'YouTubeデータを取得できませんでした。');
+        if (!cancelled) setOverview(data);
+      } catch (cause) {
+        if (!cancelled) setError(cause instanceof Error ? cause.message : 'YouTubeデータを取得できませんでした。');
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
     fetch('/api/auth/session', { cache: 'no-store' })
       .then(async (response) => {
         if (!response.ok) throw new Error('ログイン状態を確認できません。');
@@ -42,20 +57,6 @@ export default function OwnerDashboard() {
           setError(cause instanceof Error ? cause.message : 'ログイン状態を確認できません。');
         }
       });
-
-    async function loadOverview() {
-      setLoading(true);
-      try {
-        const response = await fetch('/api/youtube/overview', { cache: 'no-store' });
-        const data = await response.json() as Overview & { error?: string };
-        if (!response.ok) throw new Error(data.error || 'YouTubeデータを取得できませんでした。');
-        if (!cancelled) setOverview(data);
-      } catch (cause) {
-        if (!cancelled) setError(cause instanceof Error ? cause.message : 'YouTubeデータを取得できませんでした。');
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
 
     return () => { cancelled = true; };
   }, []);

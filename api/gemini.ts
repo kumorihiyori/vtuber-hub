@@ -1,15 +1,15 @@
-import { verifyOwnerSession } from './_lib/owner-session';
-
 type ApiRequest = {
   method?: string;
-  headers?: { cookie?: string };
   body?: unknown;
+  headers?: { cookie?: string };
 };
 
 type ApiResponse = {
   status: (code: number) => ApiResponse;
   json: (body: unknown) => void;
 };
+
+import { verifyOwnerSession } from '../_lib/owner-session';
 
 type GeminiResponse = {
   candidates?: Array<{

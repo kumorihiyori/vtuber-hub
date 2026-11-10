@@ -1,3 +1,5 @@
+import { clearOwnerSessionCookie } from '../_lib/owner-session';
+
 type ApiRequest = {
   method?: string;
 };
@@ -7,8 +9,6 @@ type ApiResponse = {
   status: (code: number) => ApiResponse;
   json: (body: unknown) => void;
 };
-
-import { clearOwnerSessionCookie } from '../_lib/owner-session';
 
 export default function handler(req: ApiRequest, res: ApiResponse) {
   res.setHeader('Cache-Control', 'no-store');
