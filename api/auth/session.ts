@@ -1,3 +1,5 @@
+import { verifyOwnerSession } from '../_lib/owner-session.js';
+
 type ApiRequest = {
   method?: string;
   headers?: { cookie?: string };
@@ -8,8 +10,6 @@ type ApiResponse = {
   status: (code: number) => ApiResponse;
   json: (body: unknown) => void;
 };
-
-import { verifyOwnerSession } from '../_lib/owner-session';
 
 export default function handler(req: ApiRequest, res: ApiResponse) {
   res.setHeader('Cache-Control', 'no-store');

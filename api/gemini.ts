@@ -1,3 +1,5 @@
+import { verifyOwnerSession } from './_lib/owner-session.js';
+
 type ApiRequest = {
   method?: string;
   body?: unknown;
@@ -8,8 +10,6 @@ type ApiResponse = {
   status: (code: number) => ApiResponse;
   json: (body: unknown) => void;
 };
-
-import { verifyOwnerSession } from '../_lib/owner-session';
 
 type GeminiResponse = {
   candidates?: Array<{
