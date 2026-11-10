@@ -1,5 +1,6 @@
 import crypto from 'node:crypto';
 import { Client } from 'pg';
+import { createOwnerSession, ownerSessionCookie } from '../_lib/owner-session';
 
 type ApiRequest = {
   method?: string;
@@ -11,12 +12,12 @@ type ApiResponse = {
   setHeader: (name: string, value: string | string[]) => void;
   status: (code: number) => ApiResponse;
   json: (body: unknown) => void;
+  end: () => void;
 };
 
 const COOKIE_PATH = '/api/google';
 const STATE_COOKIE = 'google_oauth_state';
 const VERIFIER_COOKIE = 'google_oauth_code_verifier';
-const ALLOWED_EMAIL_ENV = 'GOOGLE_ALLOWED_EMAIL';
 
 function getQueryValue(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] ?? '' : value ?? '';
@@ -27,10 +28,7 @@ function getCookie(req: ApiRequest, name: string) {
   if (!cookieHeader) return '';
 
   const prefix = `${name}=`;
-  const cookie = cookieHeader
-    .split(';')
-    .map((part) => part.trim())
-    .find((part) => part.startsWith(prefix));
+  const cookie = cookieHeader.split(';').map((part) => part.trim()).find((part) => part.startsWith(prefix));
   return cookie ? cookie.slice(prefix.length) : '';
 }
 
@@ -93,14 +91,16 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
   const redirectUri = process.env.GOOGLE_REDIRECT_URI;
   const databaseUrl = process.env.DATABASE_URL;
-  const allowedEmail = process.env[ALLOWED_EMAIL_ENV]?.trim().toLowerCase();
+  const allowedEmail = process.env.GOOGLE_ALLOWED_EMAIL?.trim().toLowerCase();
 
   if (!code || !clientId || !clientSecret || !redirectUri || !databaseUrl) {
     return res.status(400).json({ error: 'Required OAuth or database configuration is missing.' });
   }
-
   if (!allowedEmail) {
     return res.status(500).json({ error: 'Owner email is not configured.' });
+  }
+  if (!process.env.SESSION_SECRET || Buffer.byteLength(process.env.SESSION_SECRET, 'utf8') < 32) {
+    return res.status(500).json({ error: 'Owner session is not configured.' });
   }
 
   try {
@@ -134,7 +134,6 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
       console.error('Google token exchange failed with status:', tokenResponse.status);
       return res.status(400).json({ error: 'Google token exchange failed.' });
     }
-
     if (typeof tokenData.refresh_token !== 'string' || !tokenData.refresh_token) {
       return res.status(400).json({ error: 'Google did not return a refresh token. Please revoke access and try again.' });
     }
@@ -151,14 +150,13 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
       return res.status(400).json({ error: 'A verified Google email address is required.' });
     }
 
-    const email = String(userInfo.email).trim().toLowerCase();
+    const email = userInfo.email.trim().toLowerCase();
     if (email !== allowedEmail) {
       return res.status(403).json({ error: 'This Google account is not allowed to use this app.' });
     }
 
     const encryptedRefreshToken = encryptText(tokenData.refresh_token);
     const client = new Client({ connectionString: databaseUrl });
-
     try {
       await client.connect();
       await client.query(
@@ -174,11 +172,14 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
       await client.end().catch(() => undefined);
     }
 
-    return res.status(200).json({
-      ok: true,
-      email,
-      message: 'Google OAuth connected successfully.',
-    });
+    const sessionToken = createOwnerSession(email);
+    res.setHeader('Set-Cookie', [
+      `${STATE_COOKIE}=; Path=${COOKIE_PATH}; HttpOnly; Secure; SameSite=Lax; Max-Age=0`,
+      `${VERIFIER_COOKIE}=; Path=${COOKIE_PATH}; HttpOnly; Secure; SameSite=Lax; Max-Age=0`,
+      ownerSessionCookie(sessionToken),
+    ]);
+    res.setHeader('Location', '/?connected=1');
+    return res.status(302).end();
   } catch (error) {
     console.error('OAuth callback failed:', error instanceof Error ? error.message : 'unknown error');
     return res.status(500).json({ error: 'Unexpected OAuth error.' });
