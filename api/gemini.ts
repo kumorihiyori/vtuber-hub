@@ -1,4 +1,4 @@
-import { verifyOwnerSession } from '../_lib/owner-session.js';
+import { verifyOwnerSession } from './_lib/owner-session.js';
 
 type ApiRequest = {
   method?: string;
