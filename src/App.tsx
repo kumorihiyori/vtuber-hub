@@ -37,7 +37,7 @@ import {
   Youtube,
 } from 'lucide-react';
 
-type Tab = 'analytics' | 'schedule' | 'ai_advisor' | 'egosearch' | 'discord';
+type Tab = 'analytics' | 'schedule' | 'ai_advisor' | 'discord';
 
 type Overview = {
   channelTitle: string;
@@ -55,7 +55,6 @@ const tabs = [
   { id: 'analytics', label: 'アナリティクス', icon: TrendingUp },
   { id: 'schedule', label: 'スケジュール', icon: Calendar },
   { id: 'ai_advisor', label: 'AIアドバイザー', icon: Sparkles },
-  { id: 'egosearch', label: 'エゴサ', icon: Search },
   { id: 'discord', label: 'Discord', icon: MessageCircle },
 ] as const;
 
@@ -64,12 +63,6 @@ const initialEvents = [
   { id: 2, title: '【Apex Legends】ランク耐久！ソロダイヤ目指す', time: '21:00 - 24:00', date: '2026-11-11', category: 'ゲーム', status: '予定', ccv: 0 },
   { id: 3, title: '【ASMR】耳かき＆ささやき声でぐっすり睡眠導入', time: '23:00 - 01:00', date: '2026-11-13', category: 'ASMR', status: '予定', ccv: 0 },
   { id: 4, title: '【コラボ】雪城ひなたコラボ！爆笑パーティゲーム', time: '20:00 - 22:00', date: '2026-11-14', category: 'コラボ', status: '予定', ccv: 0 },
-];
-
-const initialTweets = [
-  { id: 't1', author: 'ひよりっ子A', handle: '@hiyori_love', content: '昨日の曇ひよりちゃんのASMRマジで最高だった…', tag: '#曇ひより見ろ', sentiment: 'positive', likes: 24, retweets: 3, time: '10分前' },
-  { id: 't2', author: '雲野たくみ', handle: '@takumi_kumo', content: 'ひよりちゃんのApexプレイ上手くなりすぎてない！？', tag: '#くもりあ', sentiment: 'positive', likes: 45, retweets: 8, time: '35分前' },
-  { id: 't3', author: 'イラストレーターましろ', handle: '@mashiro_art', content: '曇ひよりちゃんのファンアート描きました！', tag: '#曇ひより', sentiment: 'art', likes: 182, retweets: 42, time: '2時間前' },
 ];
 
 const initialMarshmallows = [
@@ -87,8 +80,6 @@ const initialCollabRequests = [
   { id: 'c1', partner: '雪城ひなた (@hinata_v)', server: 'ひより＆雪城ひなた コラボ準備部屋', game: 'Apex Legends', date: '2026-11-14', status: '確定・準備中', discordChannel: '#配信オーバーレイ確認' },
   { id: 'c2', partner: '雨宮ミスト (@mist_amamiya)', server: 'VTuber同業者交流・歌枠連絡会', game: '【歌枠】アニソンデュエットコラボ', date: '2026-11-20', status: '日程調整中', discordChannel: '#DM相談中' },
 ];
-
-const egoKeywords = ['曇ひより', '#曇ひより', '#曇ひより見ろ', '#くもりあ'];
 
 function formatMetric(value: number | null | undefined, fallback = '未取得') {
   if (value == null) return fallback;
@@ -429,47 +420,6 @@ export default function App() {
                   </div>
                   <p className="mt-2 text-xs text-[#a3958a]">{item.date}</p>
                   <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-[#e6dfd5]">{item.content}</p>
-                </article>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {activeTab === 'egosearch' && (
-          <section className="grid gap-5 lg:grid-cols-[1fr_1.2fr]">
-            <div className="rounded-2xl border border-[#3b322c] bg-[#1c1815] p-5">
-              <h2 className="font-serif text-lg font-semibold">エゴサーチ</h2>
-              <div className="mt-4 flex flex-wrap gap-2">
-                {egoKeywords.map((keyword) => (
-                  <button key={keyword} className="rounded-full border border-[#3b322c] bg-[#201c1a] px-3 py-1.5 text-xs text-[#c4b39e]">{keyword}</button>
-                ))}
-              </div>
-              <div className="mt-4 rounded-xl border border-[#3b322c] bg-[#201c1a] p-3">
-                <div className="flex items-center gap-2 text-sm text-[#d4b584]"><Search className="h-4 w-4" />キーワード候補</div>
-                <ul className="mt-3 space-y-2 text-sm text-[#e6dfd5]">
-                  {['#曇ひより', '#曇ひより見ろ', '#くもりあ', '#ひより生放送'].map((item) => (
-                    <li key={item} className="flex items-center justify-between rounded-lg border border-[#3b322c] p-2"><span>{item}</span><span className="text-[#a3958a]">検索中</span></li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-
-            <div className="space-y-3 rounded-2xl border border-[#3b322c] bg-[#1c1815] p-5">
-              <h2 className="font-serif text-lg font-semibold">SNS反応</h2>
-              {initialTweets.map((tweet) => (
-                <article key={tweet.id} className="rounded-2xl border border-[#3b322c] bg-[#201c1a] p-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="font-semibold text-[#f1e7dc]">{tweet.author}</p>
-                      <p className="text-xs text-[#a3958a]">{tweet.handle} · {tweet.time}</p>
-                    </div>
-                    <span className="rounded-full border border-[#5c4937] bg-[#2b221b] px-2 py-1 text-[10px] text-[#d4b584]">{tweet.tag}</span>
-                  </div>
-                  <p className="mt-3 leading-6 text-[#e6dfd5]">{tweet.content}</p>
-                  <div className="mt-3 flex items-center gap-4 text-xs text-[#a3958a]">
-                    <span className="inline-flex items-center gap-1"><ThumbsUp className="h-3 w-3" />{tweet.likes}</span>
-                    <span className="inline-flex items-center gap-1"><MessageSquare className="h-3 w-3" />{tweet.retweets}</span>
-                  </div>
                 </article>
               ))}
             </div>
